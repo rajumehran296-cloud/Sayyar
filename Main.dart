@@ -1,7 +1,16 @@
-
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-void main() {
+import 'firebase_options.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const SayyarApp());
 }
 
@@ -14,292 +23,200 @@ class SayyarApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'SAYYAR',
       theme: ThemeData(
-        useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF00875A),
+          seedColor: Colors.deepPurple,
         ),
+        useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: const PhoneLoginPage(),
     );
   }
 }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
-colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),  @override
-  colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  final pickupController = TextEditingController();
-  final destinationController = TextEditingController();
-
-  String selectedRide = 'Economy';
+class PhoneLoginPage extends StatefulWidget {
+  const PhoneLoginPage({super.key});
 
   @override
-  void dispose() {
-    pickupController.dispose();
-    destinationController.dispose();
-    super.dispose();
-  }
+  State<PhoneLoginPage> createState() => _PhoneLoginPageState();
+}
 
-  void findRide() {
-    if (pickupController.text.trim().isEmpty ||
-        destinationController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter pickup and destination'),
-        ),
-      );
+class _PhoneLoginPageState extends State<PhoneLoginPage> {
+  final phoneController = TextEditingController();
+  final otpController = TextEditingController();
+
+  String verificationId = '';
+  bool otpSent = false;
+  bool loading = false;
+
+  Future<void> sendOTP() async {
+    final phone = phoneController.text.trim();
+
+    if (phone.isEmpty || !phone.startsWith('+')) {
+      showMessage('Country code ke sath phone number likhein');
       return;
     }
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('SAYYAR'),
-        content: Text(
-          'Pickup: ${pickupController.text}\n'
-          'Destination: ${destinationController.text}\n'
-          'Ride: $selectedRide\n\n'
-          'Your request is ready. Driver matching will be added next.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+    setState(() {
+      loading = true;
+    });
+
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: phone,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          await FirebaseAuth.instance.signInWithCredential(credential);
+          if (mounted) {
+            showMessage('Login successful!');
+          }
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          showMessage(e.message ?? 'OTP send nahi hua');
+        },
+        codeSent: (String id, int? resendToken) {
+          verificationId = id;
+          setState(() {
+            otpSent = true;
+          });
+          showMessage('OTP aap ke phone par bhej diya gaya');
+        },
+        codeAutoRetrievalTimeout: (String id) {
+          verificationId = id;
+        },
+      );
+    } catch (e) {
+      showMessage('Error: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> verifyOTP() async {
+    final code = otpController.text.trim();
+
+    if (code.length != 6) {
+      showMessage('6 digit OTP likhein');
+      return;
+    }
+
+    setState(() {
+      loading = true;
+    });
+
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: code,
+      );
+
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      showMessage('SAYYAR login successful!');
+    } on FirebaseAuthException catch (e) {
+      showMessage(e.message ?? 'OTP ghalat hai');
+    } finally {
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
+    }
+  }
+
+  void showMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 
-  Widget rideCard(
-    String name,
-    String subtitle,
-    IconData icon,
-  ) {
-    final isSelected = selectedRide == name;
-
-    return Card(
-      color: isSelected ? const Color(0xFFE4F4EC) : Colors.white,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-        side: BorderSide(
-          color: isSelected
-              ? const Color(0xFF00875A)
-              : Colors.black12,
-          width: isSelected ? 2 : 1,
-        ),
-      ),
-      child: ListTile(
-        onTap: () {
-          setState(() {
-            selectedRide = name;
-          });
-        },
-        leading: Icon(
-          icon,
-          
-        mainAxisAlignment: MainAxisAlignment.center,  color: const Color(0xFF00875A),
-        ),
-        title: Text(
-          'SAYYAR $name',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(subtitle),
-        trailing: Icon(
-          isSelected
-              ? Icons.check_circle
-              : Icons.circle_outlined,
-          color: const Color(0xFF00875A),
-        ),
-      ),
-    );
+  @override
+  void dispose() {
+    phoneController.dispose();
+    otpController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9F8),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text(
-          'SAYYAR',
-          style: TextStyle(
-            color: Color(0xFF00875A),
-            fontWeight: FontWeight.w900,
-            fontSize: 26,
-            letterSpacing: 2,
-          ),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Profile feature coming soon'),
-                ),
-              );
-            },
-            icon: const Icon(Icons.account_circle_outlined),
-          ),
-        ],
-      ),
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const SizedBox(height: 10),
-            const Text(
-              'Your journey starts here',
-              style: TextStyle(
-                fontSize: 27,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 7),
-            const Text(
-              'Book your ride safely and comfortably.',
-              style: TextStyle(
-                color: Colors.black54,
-                fontSize: 15,
-              ),
-            ),
-            const SizedBox(height: 22),
-
-            Container(
-              height: 165,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE4F2EB),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.map_outlined,
-                    size: 65,
-                    color: Color(0xFF00875A),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.local_taxi,
+                  size: 90,
+                  color: Colors.deepPurple,
+                ),
+                const SizedBox(height: 15),
+                const Text(
+                  'SAYYAR',
+                  style: TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepPurple,
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Your map will appear here',
-                    style: TextStyle(
-                      color: Color(0xFF315C48),
-                      fontWeight: FontWeight.w600,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Your Journey, Your Way',
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 35),
+                TextField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Phone Number',
+                    hintText: '+9665XXXXXXXX',
+                    prefixIcon: Icon(Icons.phone),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: loading ? null : sendOTP,
+                    child: Text(
+                      loading ? 'Please wait...' : 'SEND OTP',
+                    ),
+                  ),
+                ),
+                if (otpSent) ...[
+                  const SizedBox(height: 25),
+                  TextField(
+                    controller: otpController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    decoration: const InputDecoration(
+                      labelText: 'Enter OTP',
+                      prefixIcon: Icon(Icons.lock),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: loading ? null : verifyOTP,
+                      child: const Text('VERIFY OTP'),
                     ),
                   ),
                 ],
-              ),
+              ],
             ),
-
-            const SizedBox(height: 25),
-            const Text(
-              'Where are you going?',
-              style: TextStyle(
-                fontSize: 21,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 15),
-
-            TextField(
-              controller: pickupController,
-              decoration: InputDecoration(
-                hintText: 'Enter pickup location',
-                prefixIcon: const Icon(
-                  Icons.my_location,
-                  color: Color(0xFF00875A),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: destinationController,
-              decoration: InputDecoration(
-                hintText: 'Enter destination',
-                prefixIcon: const Icon(
-                  Icons.location_on,
-                  color: Colors.red,
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 25),
-            const Text(
-              'Choose your ride',
-              style: TextStyle(
-                fontSize: 21,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            rideCard(
-              'Economy',
-              'Affordable everyday rides',
-              Icons.directions_car,
-            ),
-            rideCard(
-              'Comfort',
-              'More comfort for your journey',
-              Icons.local_taxi,
-            ),
-            rideCard(
-              'XL',
-              'More space for passengers',
-              Icons.airport_shuttle,
-            ),
-
-            const SizedBox(height: 25),
-
-            SizedBox(
-              height: 56,
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: findRide,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00875A),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                ),
-                child: const Text(
-                  'FIND A RIDE',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-            const Center(
-              child: Text(
-                'SAYYAR • Your journey, your way',
-                style: TextStyle(color: Colors.black45),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
