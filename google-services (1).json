@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "59541614350",
+    "project_id": "sayyar-92b8f",
+    "storage_bucket": "sayyar-92b8f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:59541614350:android:85eba6f5eba34d8ff2b15f",
+        "android_client_info": {
+          "package_name": "Com.sayyar.passenjer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANbsyVt9ItVZgbwMb5wUQE9EgxvdN8WzE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:59541614350:android:f95b65c5ed32c914f2b15f",
+        "android_client_info": {
+          "package_name": "Com.sayyar.sayyar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANbsyVt9ItVZgbwMb5wUQE9EgxvdN8WzE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
