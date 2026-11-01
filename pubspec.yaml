@@ -18,7 +18,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-name: sayyar
 description: SAYYAR Passenger App
 publish_to: 'none'
 version: 1.0.0+1
