@@ -27,8 +27,8 @@ class SayyarApp extends StatelessWidget {
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
+colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),  @override
+  
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -102,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         leading: Icon(
           icon,
-          size: 34,
+          mainAxisAlignment: MainAxisAlignment.center,
           color: const Color(0xFF00875A),
         ),
         title: Text(
