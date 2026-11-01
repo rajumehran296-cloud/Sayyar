@@ -1,3 +1,4 @@
+
 name: Build SAYYAR APK
 
 on:
@@ -25,8 +26,14 @@ jobs:
         with:
           channel: stable
 
+      - name: Preserve Firebase config
+        run: cp android/app/google-services.json /tmp/google-services.json
+
       - name: Create Android project
-        run: flutter create --platforms=android --org com.sayyar .
+        run: |
+          rm -rf android
+          flutter create --platforms=android --org com.sayyar --project-name sayyar .
+          cp /tmp/google-services.json android/app/google-services.json
 
       - name: Get packages
         run: flutter pub get
