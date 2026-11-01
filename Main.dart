@@ -28,7 +28,7 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
 colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),  @override
-  
+  colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
 }
 
 class _HomeScreenState extends State<HomeScreen> {
