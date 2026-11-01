@@ -102,8 +102,8 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         leading: Icon(
           icon,
-          mainAxisAlignment: MainAxisAlignment.center,
-          color: const Color(0xFF00875A),
+          
+        mainAxisAlignment: MainAxisAlignment.center,  color: const Color(0xFF00875A),
         ),
         title: Text(
           'SAYYAR $name',
